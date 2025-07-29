@@ -3,14 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
-  User, 
   Mail, 
   Phone, 
-  MessageSquare, 
   Check, 
   X, 
   Clock, 
-  Filter,
   Search,
   Plus,
   Edit3,
@@ -42,6 +39,8 @@ interface Project {
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // State management
   const [activeTab, setActiveTab] = useState<'bookings' | 'projects'>('bookings');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -50,15 +49,24 @@ const AdminDashboard: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [adminComment, setAdminComment] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [newProject, setNewProject] = useState({
+    title: '',
+    description: '',
+    category: '',
+  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sample data - will be replaced with Supabase data
+  // Fetch data on mount
   useEffect(() => {
-
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         // Fetch bookings
         const bookingsResponse = await bookingsAPI.getAllBookings();
-        setBookings(bookingsResponse.bookings.map((booking: any) => ({
+        setBookings(bookingsResponse.bookings?.map((booking: any) => ({
           id: booking.id.toString(),
           name: booking.name,
           email: booking.email,
@@ -69,35 +77,35 @@ const AdminDashboard: React.FC = () => {
           status: booking.status,
           adminComment: booking.admin_comment,
           createdAt: booking.created_at
-        })));
+        })) || []);
 
         // Fetch projects
         const projectsResponse = await projectsAPI.getAll();
-        setProjects(projectsResponse.projects.map((project: any) => ({
+        setProjects(projectsResponse.projects?.map((project: any) => ({
           id: project.id.toString(),
           title: project.title,
           category: project.category,
           image: project.image_url || 'https://images.pexels.com/photos/4207892/pexels-photo-4207892.jpeg?auto=compress&cs=tinysrgb&w=800',
           description: project.description
-        })));
+        })) || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
+  // Redirect if not admin
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       navigate('/');
     }
   }, [user, navigate]);
 
-  if (!user || user.role !== 'admin') {
-    return null;
-  }
-
+  // Filter bookings based on status and search term
   const filteredBookings = bookings
     .filter(booking => statusFilter === 'all' || booking.status === statusFilter)
     .filter(booking => 
@@ -106,6 +114,7 @@ const AdminDashboard: React.FC = () => {
       booking.serviceType.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+  // Handle booking status update
   const handleStatusUpdate = async (bookingId: string, status: 'approved' | 'rejected') => {
     setIsUpdating(true);
     try {
@@ -127,6 +136,55 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  // Handle new project submission
+  const handleAddProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('title', newProject.title);
+      formData.append('description', newProject.description);
+      formData.append('category', newProject.category);
+      if (imageFile) formData.append('image', imageFile);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to add project');
+      }
+
+      const data = await response.json();
+
+      // Update local state
+      setProjects(prev => [...prev, {
+        id: data.project.id,
+        title: data.project.title,
+        description: data.project.description,
+        category: data.project.category,
+        image: data.project.image_url || '',
+      }]);
+
+      // Reset form
+      setNewProject({ title: '', description: '', category: '' });
+      setImageFile(null);
+      setShowProjectModal(false);
+    } catch (err: any) {
+      console.error('Error submitting project:', err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Get status color class
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -135,6 +193,11 @@ const AdminDashboard: React.FC = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Don't render if not admin
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -287,7 +350,10 @@ const AdminDashboard: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-900">Project Gallery</h2>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+              <button
+                onClick={() => setShowProjectModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center"
+              >
                 <Plus size={20} className="mr-2" />
                 Add Project
               </button>
@@ -374,6 +440,77 @@ const AdminDashboard: React.FC = () => {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Project Modal */}
+        {showProjectModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-lg w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Project</h3>
+
+              <form onSubmit={handleAddProject}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={newProject.title}
+                    onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={newProject.description}
+                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                    rows={3}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <input
+                    type="text"
+                    value={newProject.category}
+                    onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowProjectModal(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Add Project'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

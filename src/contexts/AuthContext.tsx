@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { authAPI } from '../utils/api';
 
 interface User {
   id: string;
@@ -21,7 +21,7 @@ interface AuthContextType {
     password: string, 
     userData: { firstName: string; lastName: string }
   ) => Promise<void>;
-  logout: () => void;
+  signOut: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -32,24 +32,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
-      setLoading(true);
       try {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const response = await api.authAPI.getCurrentUser();
-          setUser(response); // assumes the backend returns a full user object
-        } else {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await authAPI.getCurrentUser();
+          setUser(response.data.user);
         }
       } catch (err) {
         console.error('Session check failed:', err);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -62,17 +60,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.authAPI.login(email, password);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setUser(data.user);
-      if (data.user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      const response = await authAPI.login(email, password);
+      const { token, user: userData } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      
+      // Redirect based on role or intended destination
+      const from = location.state?.from?.pathname || (userData.role === 'admin' ? '/admin' : '/dashboard');
+      navigate(from, { replace: true });
     } catch (err: any) {
-      const message = err?.message || 'Login failed';
+      const message = err?.response?.data?.error || err?.message || 'Login failed';
       setError(message);
       throw new Error(message);
     } finally {
@@ -88,13 +87,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.authAPI.register(email, password, userData.firstName, userData.lastName);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      setUser(data.user);
-      navigate('/dashboard');
+      const response = await authAPI.register(email, password, userData.firstName, userData.lastName);
+      const { token, user: newUser } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(newUser));
+      setUser(newUser);
+      
+      navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      const message = err?.message || 'Registration failed';
+      const message = err?.response?.data?.error || err?.message || 'Registration failed';
       setError(message);
       throw new Error(message);
     } finally {
@@ -102,16 +104,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = async () => {
+  const signOut = async () => {
     try {
-      // Optional: await api.authAPI.logout(); if your backend supports this
-    } catch (err) {
-      console.warn('Logout failed or unsupported:', err);
-    } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
-      navigate('/login');
+      navigate('/');
+    } catch (err) {
+      console.error('Sign out error:', err);
     }
   };
 
@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider 
-      value={{ user, loading, error, signIn, signUp, logout, clearError }}
+      value={{ user, loading, error, signIn, signUp, signOut, clearError }}
     >
       {children}
     </AuthContext.Provider>
