@@ -89,7 +89,7 @@ const HomePage: React.FC = () => {
       name: 'Dr. Kabir Bukar',
       rating: 5,
       comment: "Very professional and trustworthy. They helped install new lighting in my mum’s kitchen and treated us like family. I appreciate their honesty and the way they cleaned up after the work. Highly recommended!",
-      location: 'Enugu, Nigeria'
+      location: 'BUK Quaters, Kano State, Nigeria'
     }
   ];
 
