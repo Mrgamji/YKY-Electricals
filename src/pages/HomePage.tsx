@@ -10,27 +10,37 @@ const HomePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Updated Project interface to match API response
   interface Project {
     id: number;
     title: string;
     category: string;
-    image: string;
+    image?: string; // optional, for compatibility
+    image_url?: string; // optional, for compatibility
     description: string;
+    [key: string]: any; // allow extra fields
   }
 
   // Fetch projects from API
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await projectsAPI.getAll();
-        setProjects(response.data || []);
+        const result = await projectsAPI.getAll(); // this is the parsed data: { projects: [...] }
+        const data = Array.isArray(result.projects) ? result.projects : [];
+  
+        const normalized = data.map((project) => ({
+          ...project,
+          image: project.image_url || project.image || '',
+        }));
+  
+        setProjects(normalized);
       } catch (error) {
         console.error('Error fetching projects:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    
+  
     fetchProjects();
   }, []);
 
@@ -51,31 +61,35 @@ const HomePage: React.FC = () => {
     return () => clearInterval(interval);
   }, [heroSlides.length]);
 
-  const filteredProjects = activeFilter === 'all' 
-    ? projects 
-    : projects.filter(project => project.category === activeFilter);
+  const filteredProjects = activeFilter === 'all'
+    ? projects
+    : projects.filter(project => {
+        // Normalize category comparison (case-insensitive)
+        if (!project.category) return false;
+        return project.category.toLowerCase() === activeFilter.toLowerCase();
+      });
 
   const testimonials = [
     {
       id: 1,
-      name: 'Sarah Johnson',
+      name: 'Alh Musa Muhammad',
       rating: 5,
-      comment: 'Excellent service! They fixed our electrical issues quickly and professionally. The team was punctual and cleaned up perfectly after finishing the job.',
-      location: 'New York, NY'
+      comment: "YKY Electricals really impressed me! They came to my shop in Surulere and sorted out my faulty wiring in no time. I felt at ease with how friendly and respectful the team was. I’ll definitely call them again.",
+      location: 'Yakasai, Kano, Nigeria'
     },
     {
       id: 2,
-      name: 'Mike Chen',
+      name: 'Aisha Bello',
       rating: 5,
-      comment: 'Very reliable and knowledgeable. They upgraded our entire home electrical system with minimal disruption. Highly recommend for any electrical work.',
-      location: 'Los Angeles, CA'
+      comment: "I was worried about the constant power trips in my house, but YKY Electricals explained everything clearly and fixed it fast. They even followed up a week later to check if everything was still fine. That personal touch means a lot.",
+      location: 'Abuja, Nigeria'
     },
     {
       id: 3,
-      name: 'Emily Davis',
+      name: 'Dr. Kabir Bukar',
       rating: 5,
-      comment: 'Professional team with fair pricing. Great communication throughout the project. They identified issues we didn’t even know we had!',
-      location: 'Chicago, IL'
+      comment: "Very professional and trustworthy. They helped install new lighting in my mum’s kitchen and treated us like family. I appreciate their honesty and the way they cleaned up after the work. Highly recommended!",
+      location: 'Enugu, Nigeria'
     }
   ];
 
@@ -333,7 +347,7 @@ const HomePage: React.FC = () => {
               viewport={{ once: true }}
               variants={fadeIn}
             >
-              {['all', 'installations', 'repairs', 'commercial'].map((filter) => (
+              {['all', 'installations', 'repairs', 'commercial', 'emergency'].map((filter) => (
                 <motion.button
                   key={filter}
                   whileHover={{ scale: 1.05 }}
@@ -357,33 +371,48 @@ const HomePage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProjects.map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  variants={slideUp}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -10 }}
-                  className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="h-60 overflow-hidden">
-                    <img 
-                      src={project.image} 
-                      alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{project.title}</h3>
-                    <p className="text-gray-600 mb-4">{project.description}</p>
-                    <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full capitalize">
-                      {project.category}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+              {filteredProjects.length === 0 ? (
+                <div className="col-span-full text-center text-gray-500 py-12">
+                  No projects found for this category.
+                </div>
+              ) : (
+                filteredProjects.map((project, index) => (
+                  <motion.div
+                    key={project.id}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    variants={slideUp}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ y: -10 }}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="h-60 overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {project.image ? (
+                        <img 
+                          src={project.image.startsWith('/') ? `/server${project.image}` : `/server/${project.image}`}
+                          alt={project.title}
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                          onError={e => { e.currentTarget.src = "https://dummyimage.com/600x400/eee/aaa&text=No+Image"; }}
+                        />
+                      ) : (
+                        <img 
+                          src="https://dummyimage.com/600x400/eee/aaa&text=No+Image"
+                          alt="No project"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">{project.title}</h3>
+                      <p className="text-gray-600 mb-4">{project.description}</p>
+                      <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full capitalize">
+                        {project.category}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           )}
         </div>
