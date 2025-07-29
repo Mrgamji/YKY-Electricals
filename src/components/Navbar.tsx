@@ -32,12 +32,16 @@ const Navbar: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors duration-200">
-              Home
-            </Link>
-            <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition-colors duration-200">
-              Contact
-            </Link>
+            {!user && (
+              <>
+                <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors duration-200">
+                  Home
+                </Link>
+                <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition-colors duration-200">
+                  Contact
+                </Link>
+              </>
+            )}
             <Link 
               to="/book-service" 
               className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors duration-200"
@@ -45,6 +49,16 @@ const Navbar: React.FC = () => {
               Book Service
             </Link>
             
+            {/* Dashboard link for logged in users */}
+            {user && (
+              <Link
+                to="/dashboard"
+                className="text-gray-700 hover:text-blue-600 transition-colors duration-200"
+              >
+                Dashboard
+              </Link>
+            )}
+
             {user ? (
               <div className="relative">
                 <button
@@ -112,20 +126,24 @@ const Navbar: React.FC = () => {
         {isOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-              <Link 
-                to="/" 
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
-                onClick={() => setIsOpen(false)}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/contact" 
-                className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
-                onClick={() => setIsOpen(false)}
-              >
-                Contact
-              </Link>
+              {!user && (
+                <>
+                  <Link 
+                    to="/" 
+                    className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Home
+                  </Link>
+                  <Link 
+                    to="/contact" 
+                    className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Contact
+                  </Link>
+                </>
+              )}
               <Link 
                 to="/book-service" 
                 className="block px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors duration-200 mx-3"
@@ -133,19 +151,24 @@ const Navbar: React.FC = () => {
               >
                 Book Service
               </Link>
+
+              {/* Dashboard link for logged in users (mobile) */}
+              {user && (
+                <Link
+                  to="/dashboard"
+                  className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              )}
               
               {user ? (
                 <div className="border-t border-gray-200 pt-2">
                   <div className="px-3 py-2 text-sm text-gray-500">
                     Signed in as {user.email}
                   </div>
-                  <Link 
-                    to="/dashboard" 
-                    className="block px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
+                  {/* Dashboard link already above for mobile */}
                   {user.role === 'admin' && (
                     <Link 
                       to="/admin" 
