@@ -145,7 +145,7 @@ const ContactPage: React.FC = () => {
                   <Phone className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Phone</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
+                    <p className="text-gray-600">+234 (80) 36499051</p>
                     <p className="text-sm text-gray-500">24/7 Emergency Line</p>
                   </div>
                 </div>
@@ -154,7 +154,7 @@ const ContactPage: React.FC = () => {
                   <Mail className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
-                    <p className="text-gray-600">info@ykyelectricals.com</p>
+                    <p className="text-gray-600">yusifaliyakasai@gmail.com</p>
                     <p className="text-sm text-gray-500">We'll respond within 24 hours</p>
                   </div>
                 </div>
@@ -163,7 +163,7 @@ const ContactPage: React.FC = () => {
                   <MapPin className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Address</h3>
-                    <p className="text-gray-600">123 Main Street<br />City, State 12345</p>
+                    <p className="text-gray-600">No 1073 Barkum Line, <br />Yakasai B Quaters, Kano</p>
                   </div>
                 </div>
 
