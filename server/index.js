@@ -18,17 +18,7 @@ const allowedOrigins = [
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+
 
 
 
@@ -51,6 +41,17 @@ const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(helmet());
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // Use different logging based on environment
 if (process.env.NODE_ENV === 'production') {
@@ -68,6 +69,7 @@ const limiter = rateLimit({
  }
 });
 app.use(limiter);
+
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
