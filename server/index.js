@@ -6,10 +6,32 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import cors from 'cors';
+
+// Add this BEFORE routes
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://yky.netlify.app'
+];
 
 // Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+
+
 
 // Load environment variables
 dotenv.config();
