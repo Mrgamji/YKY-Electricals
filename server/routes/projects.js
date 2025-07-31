@@ -15,7 +15,9 @@ const router = express.Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads/projects');
+    // Save to the main project's public/projects directory
+    // __dirname is .../server/routes, so go up two levels to project root
+    const uploadDir = path.join(__dirname, '../../public/projects');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -137,12 +139,15 @@ router.put('/:id', authenticateToken, requireAdmin, upload.single('image'), (req
       // If new image uploaded, delete old one and use new one
       if (req.file) {
         if (project.image_url) {
-          const oldImagePath = path.join(__dirname, '..', project.image_url);
+          // Remove leading slash if present
+          const oldImageRelativePath = project.image_url.startsWith('/') ? project.image_url.slice(1) : project.image_url;
+          const oldImagePath = path.join(process.cwd(), 'public', oldImageRelativePath.replace(/^projects\//, 'projects/'));
           if (fs.existsSync(oldImagePath)) {
             fs.unlinkSync(oldImagePath);
           }
         }
-        imageUrl = `/uploads/projects/${req.file.filename}`;
+        // Save new image URL relative to /projects in public
+        imageUrl = `/projects/${req.file.filename}`;
       }
 
       db.run(

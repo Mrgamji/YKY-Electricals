@@ -46,11 +46,11 @@ const HomePage: React.FC = () => {
 
   // Hero slideshow images
   const heroSlides = [
-    '/src/uploads/15.jpeg',
-    '/src/uploads/12.jpeg',
-    '/src/uploads/13.jpeg',
-    '/src/uploads/33.jpeg',
-    '/src/uploads/23.jpeg',
+    '/uploads/15.jpeg',
+    '/uploads/12.jpeg',
+    '/uploads/13.jpeg',
+    '/uploads/33.jpeg',
+    '/uploads/23.jpeg',
   ];
 
   // Auto-advance hero slideshow
@@ -201,7 +201,7 @@ const HomePage: React.FC = () => {
             <div className="w-28 h-28 mb-4 rounded-lg overflow-hidden border-4 border-blue-200 shadow-md bg-gray-100 flex items-center justify-center">
               {/* Placeholder for CAC certificate image */}
               <img
-                src="/src/uploads/cac.jpeg"
+                src="/uploads/cac.jpeg"
                 alt="CAC Certificate"
                 className="object-contain w-full h-full"
                 loading="lazy"
@@ -230,7 +230,7 @@ const HomePage: React.FC = () => {
             <div className="w-28 h-28 mb-4 rounded-full overflow-hidden border-4 border-orange-200 shadow-md bg-gray-100 flex items-center justify-center">
               {/* Placeholder for CEO image */}
               <img
-                src="/src/uploads/ceo.jpeg"
+                src="/uploads/ceo.jpeg"
                 alt="CEO of YKY Electricals"
                 className="object-cover w-full h-full"
                 loading="lazy"
