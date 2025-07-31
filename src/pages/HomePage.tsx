@@ -167,7 +167,7 @@ const HomePage: React.FC = () => {
                   to="/contact" 
                   className="border-2  bg-blue-500 border-white hover:bg-white hover:text-blue-900 text-white px-8 py-4 rounded-lg font-semibold transition-all duration-300 text-center shadow-lg hover:shadow-white/20"
                 >
-                  View our Works
+                  Contact Us
                 </Link>
               </motion.div>
             </div>
